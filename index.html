@@ -98,9 +98,11 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    const firebaseConfig = {
+      const firebaseConfig = {
       apiKey: "AIzaSyDu0IDYZ-ILUCgGqE2AhfwsNaWGtJol5F8", 
+      authDomain: "rider-strapizzami.firebaseapp.com",
       databaseURL: "https://rider-strapizzami-default-rtdb.firebaseio.com"
+    };
     };
 
     const app = initializeApp(firebaseConfig);
