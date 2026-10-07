@@ -12,8 +12,8 @@
     body { font-family: system-ui, -apple-system, sans-serif; background: #000; color: #fff; margin: 0; padding: 15px; }
     h1 { font-size: 1.3rem; color: #fff; text-align: center; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px; }
     
-    /* Contenitore Mappa */
-    #map { height: 350px; width: 100%; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; }
+    /* FIX MAPPA NERA: Altezza esplicita e sfondo scuro di caricamento */
+    #map { height: 350px !important; width: 100%; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; background: #222; }
 
     .card { background: #111; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #222; }
     .card h3 { margin-top: 0; color: #eee; font-size: 1.1rem; }
@@ -98,11 +98,10 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-      const firebaseConfig = {
-      apiKey: "AIzaSyDu0IDYZ-ILUCgGqE2AhfwsNaWGtJol5F8", 
+    const firebaseConfig = {
+      apiKey: "AIzaSyDu0IDYZ-ILUCgGqE2AhfwsNaWGtJol5F8",
       authDomain: "rider-strapizzami.firebaseapp.com",
       databaseURL: "https://rider-strapizzami-default-rtdb.firebaseio.com"
-    };
     };
 
     const app = initializeApp(firebaseConfig);
@@ -117,13 +116,16 @@
     function initMap() {
       map = L.map('map').setView([41.4582, 12.6631], 14); // Coordinate Nettuno
       
-      // Mappa Scura / Dark Mode Style
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap',
+      // Mappa Standard OpenStreetMap (Infallibile su mobile)
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 19
       }).addTo(map);
 
       markersGroup = L.layerGroup().addTo(map);
+
+      // Fix per forza il ricalcolo delle dimensioni della mappa
+      setTimeout(() => { map.invalidateSize(); }, 400);
     }
 
     initMap();
@@ -137,7 +139,7 @@
       });
     });
 
-    // Converti indirizzo in Coordinate GPS via Nominatim (Free Geocoding)
+    // Converti indirizzo in Coordinate GPS via Nominatim
     async function geocodeAddress(address) {
       try {
         const query = encodeURIComponent(address + ", Nettuno, Italy");
@@ -221,7 +223,6 @@
         if (c.lat && c.lon) {
           const color = c.coloreZona || "#ff9800";
           
-          // Icona Cerchio Colorato Personalizzata per la Mappa
           const customMarker = L.divIcon({
             className: 'custom-pin',
             html: `<div style="background-color:${color}; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 5px #000;"></div>`,
