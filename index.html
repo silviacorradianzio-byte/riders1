@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Strapizzami Live Map</title>
+  <title>Strapizzami Live Map & Route Optimizer</title>
 
   <!-- Leaflet CSS per la Mappa -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -12,7 +12,6 @@
     body { font-family: system-ui, -apple-system, sans-serif; background: #000; color: #fff; margin: 0; padding: 15px; }
     h1 { font-size: 1.3rem; color: #fff; text-align: center; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px; }
     
-    /* FIX MAPPA NERA: Altezza esplicita e sfondo scuro di caricamento */
     #map { height: 350px !important; width: 100%; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; background: #222; }
 
     .card { background: #111; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #222; }
@@ -22,6 +21,12 @@
     input:focus { border-color: #666; outline: none; }
     button { background: #fff; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; border-radius: 8px; }
     
+    /* Box Ottimizzatore Giro */
+    .btn-optimize { background: #ff9800 !important; color: #000 !important; font-size: 1.05rem; padding: 14px; margin-bottom: 10px; }
+    #percorsoRisultato { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-top: 10px; display: none; }
+    .tappa-item { padding: 6px 0; border-bottom: 1px solid #2a2a2a; font-size: 0.95rem; }
+    .tappa-item:last-child { border-bottom: none; }
+
     /* Picker a 15 Colori */
     .color-picker-container { margin: 10px 0; }
     .color-picker-label { font-size: 0.85rem; color: #888; margin-bottom: 8px; display: block; }
@@ -29,8 +34,9 @@
     .color-btn { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; margin: 0; }
     .color-btn.selected { border-color: #fff; transform: scale(1.18); box-shadow: 0 0 8px rgba(255,255,255,0.5); }
 
-    /* Schede Clienti */
+    /* Schede Clienti con Checkbox */
     .cliente-item { background: #111; padding: 14px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #222; position: relative; }
+    .checkbox-select { width: 22px; height: 22px; float: right; cursor: pointer; accent-color: #ff9800; }
     .badge-zona { color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; display: inline-block; margin-bottom: 8px; }
     
     /* Azioni */
@@ -48,6 +54,18 @@
 
   <!-- MAPPA INTERATTIVA -->
   <div id="map"></div>
+
+  <!-- PANNELLO OTTIMIZZAZIONE GIRO -->
+  <div class="card">
+    <h3>🚀 Ottimizzatore Giro Consegne</h3>
+    <p style="font-size:0.85rem; color:#aaa; margin-top:-5px;">Seleziona i clienti con la spunta in basso e calcola la sequenza ideale per metterci meno tempo.</p>
+    <button id="btnCalcolaGiro" class="btn-optimize">⚡ Calcola Sequenza Ideale</button>
+    
+    <div id="percorsoRisultato">
+      <strong style="color:#ff9800;">📍 Ordine Consegne Consigliato:</strong>
+      <div id="listaTappe" style="margin-top:8px;"></div>
+    </div>
+  </div>
 
   <div class="card">
     <h3 id="formTitle">Aggiungi / Modifica Cliente</h3>
@@ -108,29 +126,28 @@
     const db = getDatabase(app);
     const clientiRef = ref(db, 'clienti');
 
+    // Coordinate Pizzeria Strapizzami (Nettuno) come punto di partenza
+    const STRAPIZZAMI_POS = { lat: 41.4582, lon: 12.6631, nome: "Strapizzami (Partenza)" };
+
     let tuttiClienti = [];
     let coloreSelezionato = "#ff9800";
-    let map, markersGroup;
+    let map, markersGroup, polylineRoute;
 
-    // Inizializza Mappa centrata su Nettuno
     function initMap() {
-      map = L.map('map').setView([41.4582, 12.6631], 14); // Coordinate Nettuno
+      map = L.map('map').setView([STRAPIZZAMI_POS.lat, STRAPIZZAMI_POS.lon], 14);
       
-      // Mappa Standard OpenStreetMap (Infallibile su mobile)
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 19
       }).addTo(map);
 
       markersGroup = L.layerGroup().addTo(map);
-
-      // Fix per forza il ricalcolo delle dimensioni della mappa
       setTimeout(() => { map.invalidateSize(); }, 400);
     }
 
     initMap();
 
-    // Gestione Selezione Colore
+    // Selezione Colore
     document.querySelectorAll('.color-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
@@ -139,7 +156,6 @@
       });
     });
 
-    // Converti indirizzo in Coordinate GPS via Nominatim
     async function geocodeAddress(address) {
       try {
         const query = encodeURIComponent(address + ", Nettuno, Italy");
@@ -168,7 +184,6 @@
         return;
       }
 
-      // Trova coordinate sulla mappa
       const coords = await geocodeAddress(indirizzo);
 
       const payload = {
@@ -203,7 +218,6 @@
       document.getElementById("btnAnnulla").style.display = "none";
     }
 
-    // Sincronizzazione in tempo reale con Firebase
     onValue(clientiRef, (snapshot) => {
       tuttiClienti = [];
       const data = snapshot.val();
@@ -222,7 +236,6 @@
       lista.forEach(c => {
         if (c.lat && c.lon) {
           const color = c.coloreZona || "#ff9800";
-          
           const customMarker = L.divIcon({
             className: 'custom-pin',
             html: `<div style="background-color:${color}; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 5px #000;"></div>`,
@@ -257,6 +270,7 @@
 
         cont.innerHTML += `
           <div class="cliente-item">
+            <input type="checkbox" class="checkbox-select" data-id="${c.id}">
             ${c.zona ? `<span class="badge-zona" style="background:${bgZona}; color:${textColor};">📍 ${c.zona}</span><br>` : ''}
             <strong style="font-size:1.05rem;">${c.nome}</strong><br>
             <span style="color:#ccc;">🏠 ${c.indirizzo}</span><br>
@@ -272,6 +286,69 @@
         `;
       });
     }
+
+    // ALGORITMO OTTIMIZZATORE DI PERCORSO (Nearest Neighbor)
+    function calcolaDistanza(p1, p2) {
+      const R = 6371; // Raggio della Terra in km
+      const dLat = (p2.lat - p1.lat) * Math.PI / 180;
+      const dLon = (p2.lon - p1.lon) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    document.getElementById("btnCalcolaGiro").addEventListener("click", () => {
+      const selezionati = Array.from(document.querySelectorAll('.checkbox-select:checked'))
+                               .map(cb => tuttiClienti.find(c => c.id === cb.getAttribute('data-id')))
+                               .filter(c => c && c.lat && c.lon);
+
+      if (selezionati.length === 0) {
+        alert("Seleziona almeno 1 cliente spuntando la casella in alto a destra nella sua scheda!");
+        return;
+      }
+
+      let daVisitare = [...selezionati];
+      let puntoAttuale = STRAPIZZAMI_POS;
+      let percorsoOrdinato = [];
+      let latLngsPolyline = [[STRAPIZZAMI_POS.lat, STRAPIZZAMI_POS.lon]];
+
+      while (daVisitare.length > 0) {
+        let piuVicinoIdx = 0;
+        let distMinima = Infinity;
+
+        for (let i = 0; i < daVisitare.length; i++) {
+          let dist = calcolaDistanza(puntoAttuale, daVisitare[i]);
+          if (dist < distMinima) {
+            distMinima = dist;
+            piuVicinoIdx = i;
+          }
+        }
+
+        let prossimo = daVisitare.splice(piuVicinoIdx, 1)[0];
+        percorsoOrdinato.push(prossimo);
+        latLngsPolyline.push([prossimo.lat, prossimo.lon]);
+        puntoAttuale = prossimo;
+      }
+
+      // Mostra Risultato Testuale
+      const contRisultati = document.getElementById("listaTappe");
+      contRisultati.innerHTML = "";
+      percorsoOrdinato.forEach((c, idx) => {
+        contRisultati.innerHTML += `
+          <div class="tappa-item">
+            <b style="color:#ff9800;">${idx + 1}° TAPPA:</b> <b>${c.nome}</b><br>
+            🏠 ${c.indirizzo} ${c.zona ? `(${c.zona})` : ''} | 📞 <a href="tel:${c.telefono}" style="color:#4caf50;">${c.telefono}</a>
+          </div>
+        `;
+      });
+      document.getElementById("percorsoRisultato").style.display = "block";
+
+      // Disegna Linea Arancione del Percorso sulla Mappa
+      if (polylineRoute) map.removeLayer(polylineRoute);
+      polylineRoute = L.polyline(latLngsPolyline, { color: '#ff9800', weight: 4, dashArray: '6, 8' }).addTo(map);
+      map.fitBounds(polylineRoute.getBounds(), { padding: [30, 30] });
+    });
 
     window.preparaModifica = function(id) {
       const c = tuttiClienti.find(item => item.id === id);
