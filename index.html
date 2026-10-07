@@ -5,19 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Strapizzami Rider</title>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background: #121212; color: #fff; margin: 0; padding: 15px; }
-    h1 { font-size: 1.4rem; color: #ff9800; text-align: center; margin-bottom: 20px; }
-    .card { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #000; color: #fff; margin: 0; padding: 15px; }
+    h1 { font-size: 1.3rem; color: #fff; text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    .card { background: #111; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #222; }
+    .card h3 { margin-top: 0; color: #eee; font-size: 1.1rem; }
     input, button { width: 100%; padding: 12px; margin: 6px 0; border-radius: 8px; border: none; box-sizing: border-box; font-size: 1rem; }
-    input { background: #2a2a2a; color: #fff; border: 1px solid #444; }
-    button { background: #ff9800; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; }
-    .cliente-item { background: #2a2a2a; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #ff9800; position: relative; }
-    .badge-zona { background: #ff9800; color: #000; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; display: inline-block; margin-bottom: 5px; }
-    .actions { display: flex; gap: 8px; margin-top: 10px; }
-    .actions a, .actions button { flex: 1; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.9rem; border: none; cursor: pointer; }
-    .btn-call { background: #4caf50; color: white; }
-    .btn-map { background: #2196f3; color: white; }
-    .btn-delete { background: #f44336; color: white; flex: 0.5 !important; }
+    input { background: #222; color: #fff; border: 1px solid #333; }
+    input:focus { border-color: #666; outline: none; }
+    button { background: #fff; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; border-radius: 8px; }
+    
+    /* Picker Colore Zona */
+    .color-picker-container { margin: 10px 0; }
+    .color-picker-label { font-size: 0.85rem; color: #888; margin-bottom: 6px; display: block; }
+    .color-options { display: flex; gap: 10px; }
+    .color-btn { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; margin: 0; }
+    .color-btn.selected { border-color: #fff; transform: scale(1.15); }
+
+    /* Schede Clienti */
+    .cliente-item { background: #111; padding: 14px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #222; position: relative; }
+    .badge-zona { color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; display: inline-block; margin-bottom: 8px; }
+    
+    /* Azioni e Pulsanti */
+    .actions { display: flex; gap: 8px; margin-top: 12px; }
+    .actions a, .actions button { flex: 1; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.85rem; border: none; cursor: pointer; }
+    .btn-call { background: #2e7d32 !important; color: #fff !important; } /* Verde */
+    .btn-map { background: #1565c0 !important; color: #fff !important; }  /* Blu */
+    .btn-edit { background: #333 !important; color: #fff !important; flex: 0.6 !important; }
+    .btn-delete { background: #222 !important; color: #ff5252 !important; flex: 0.4 !important; border: 1px solid #333 !important; }
   </style>
 </head>
 <body>
@@ -25,13 +39,29 @@
   <h1>🍕 Strapizzami Delivery</h1>
 
   <div class="card">
-    <h3>Aggiungi Nuovo Cliente</h3>
+    <h3 id="formTitle">Aggiungi / Modifica Cliente</h3>
+    <input type="hidden" id="editId">
     <input type="text" id="nome" placeholder="Nome e Cognome (es. Mario Rossi)">
     <input type="text" id="indirizzo" placeholder="Indirizzo (es. Via Eschieto 1)">
-    <input type="text" id="zona" placeholder="Zona / Quartiere (es. Cretarossa, Poligono, Centro)">
-    <input type="tel" id="telefono" placeholder="Telefono (es. 3803620178)">
-    <input type="text" id="note" placeholder="Note (es. citofono, piano, scala)">
+    <input type="text" id="zona" placeholder="Zona / Quartiere (es. Cretarossa, Poligono)">
+    
+    <div class="color-picker-container">
+      <span class="color-picker-label">Colore Badge Zona:</span>
+      <div class="color-options">
+        <button type="button" class="color-btn selected" style="background:#ff9800" data-color="#ff9800"></button>
+        <button type="button" class="color-btn" style="background:#f44336" data-color="#f44336"></button>
+        <button type="button" class="color-btn" style="background:#9c27b0" data-color="#9c27b0"></button>
+        <button type="button" class="color-btn" style="background:#00bcd4" data-color="#00bcd4"></button>
+        <button type="button" class="color-btn" style="background:#4caf50" data-color="#4caf50"></button>
+        <button type="button" class="color-btn" style="background:#e91e63" data-color="#e91e63"></button>
+      </div>
+    </div>
+
+    <input type="tel" id="telefono" placeholder="Telefono (es. 3803620178, 06980000)">
+    <input type="text" id="note" placeholder="Note (es. citofono, scala B, secondo numero)">
+    
     <button id="btnSalva">Salva Cliente</button>
+    <button id="btnAnnulla" style="display:none; background:#222; color:#fff; border:1px solid #333;">Annulla Modifica</button>
   </div>
 
   <div class="card">
@@ -43,7 +73,7 @@
   <!-- Firebase SDK per Realtime Database -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "INSERISCI_LA_TUA_API_KEY", 
@@ -55,31 +85,63 @@
     const clientiRef = ref(db, 'clienti');
 
     let tuttiClienti = [];
+    let coloreSelezionato = "#ff9800";
 
-    // Salva nuovo cliente
+    // Gestione selezione colore zona
+    document.querySelectorAll('.color-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+        e.target.classList.add('selected');
+        coloreSelezionato = e.target.getAttribute('data-color');
+      });
+    });
+
+    // Salva o Aggiorna Cliente
     document.getElementById("btnSalva").addEventListener("click", () => {
-      const nome = document.getElementById("nome").value;
-      const indirizzo = document.getElementById("indirizzo").value;
-      const zona = document.getElementById("zona").value;
-      const telefono = document.getElementById("telefono").value;
-      const note = document.getElementById("note").value;
+      const editId = document.getElementById("editId").value;
+      const nome = document.getElementById("nome").value.trim();
+      const indirizzo = document.getElementById("indirizzo").value.trim();
+      const zona = document.getElementById("zona").value.trim();
+      const telefono = document.getElementById("telefono").value.trim();
+      const note = document.getElementById("note").value.trim();
 
       if (!nome || !indirizzo || !telefono) {
         alert("Compila almeno Nome, Indirizzo e Telefono!");
         return;
       }
 
-      push(clientiRef, {
-        nome, indirizzo, zona, telefono, note,
+      const payload = {
+        nome, indirizzo, zona, 
+        coloreZona: coloreSelezionato,
+        telefono, note,
         data: new Date().toISOString()
-      });
+      };
 
+      if (editId) {
+        // Modifica scheda esistente
+        set(ref(db, 'clienti/' + editId), payload);
+      } else {
+        // Nuova scheda
+        push(clientiRef, payload);
+      }
+
+      resetForm();
+    });
+
+    // Annulla Modifica
+    document.getElementById("btnAnnulla").addEventListener("click", resetForm);
+
+    function resetForm() {
+      document.getElementById("editId").value = "";
       document.getElementById("nome").value = "";
       document.getElementById("indirizzo").value = "";
       document.getElementById("zona").value = "";
       document.getElementById("telefono").value = "";
       document.getElementById("note").value = "";
-    });
+      document.getElementById("formTitle").innerText = "Aggiungi / Modifica Cliente";
+      document.getElementById("btnSalva").innerText = "Salva Cliente";
+      document.getElementById("btnAnnulla").style.display = "none";
+    }
 
     // Ascolta gli aggiornamenti in tempo reale
     onValue(clientiRef, (snapshot) => {
@@ -96,21 +158,23 @@
     function mostraClienti(lista) {
       const cont = document.getElementById("listaClienti");
       if (lista.length === 0) {
-        cont.innerHTML = "<p style='color:#888;'>Nessun cliente trovato.</p>";
+        cont.innerHTML = "<p style='color:#666;'>Nessun cliente trovato.</p>";
         return;
       }
       cont.innerHTML = "";
       lista.slice().reverse().forEach(c => {
+        const bgZona = c.coloreZona || "#333";
         cont.innerHTML += `
           <div class="cliente-item">
-            ${c.zona ? `<span class="badge-zona">📍 ${c.zona}</span><br>` : ''}
-            <strong>${c.nome}</strong><br>
-            🏠 ${c.indirizzo}<br>
-            📞 ${c.telefono}<br>
-            ${c.note ? `<small style="color:#aaa;">📝 ${c.note}</small><br>` : ''}
+            ${c.zona ? `<span class="badge-zona" style="background:${bgZona}">📍 ${c.zona}</span><br>` : ''}
+            <strong style="font-size:1.05rem;">${c.nome}</strong><br>
+            <span style="color:#ccc;">🏠 ${c.indirizzo}</span><br>
+            <span style="color:#ccc;">📞 ${c.telefono}</span><br>
+            ${c.note ? `<small style="color:#888;">📝 ${c.note}</small><br>` : ''}
             <div class="actions">
               <a href="tel:${c.telefono}" class="btn-call">Chiama</a>
               <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.indirizzo + ' Nettuno')}" target="_blank" class="btn-map">Mappa</a>
+              <button onclick="preparaModifica('${c.id}')" class="btn-edit">✏️ Modifica</button>
               <button onclick="eliminaCliente('${c.id}')" class="btn-delete">🗑️</button>
             </div>
           </div>
@@ -118,15 +182,40 @@
       });
     }
 
-    // Funzione per eliminare un cliente dal database
+    // Carica dati nel form per la modifica
+    window.preparaModifica = function(id) {
+      const c = tuttiClienti.find(item => item.id === id);
+      if (!c) return;
+
+      document.getElementById("editId").value = c.id;
+      document.getElementById("nome").value = c.nome || "";
+      document.getElementById("indirizzo").value = c.indirizzo || "";
+      document.getElementById("zona").value = c.zona || "";
+      document.getElementById("telefono").value = c.telefono || "";
+      document.getElementById("note").value = c.note || "";
+
+      // Seleziona il colore salvato
+      coloreSelezionato = c.coloreZona || "#ff9800";
+      document.querySelectorAll('.color-btn').forEach(b => {
+        if (b.getAttribute('data-color') === coloreSelezionato) b.classList.add('selected');
+        else b.classList.remove('selected');
+      });
+
+      document.getElementById("formTitle").innerText = "✏️ Modifica Cliente";
+      document.getElementById("btnSalva").innerText = "Aggiorna Cliente";
+      document.getElementById("btnAnnulla").style.display = "block";
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Eliminazione cliente
     window.eliminaCliente = function(id) {
       if (confirm("Vuoi davvero eliminare questo cliente?")) {
-        const clienteSpecificoRef = ref(db, 'clienti/' + id);
-        remove(clienteSpecificoRef);
+        remove(ref(db, 'clienti/' + id));
       }
     };
 
-    // Ricerca globale avanzata: Cerca in Nome, Indirizzo, Zona, Telefono e Note
+    // Ricerca globale istantanea
     document.getElementById("ricerca").addEventListener("input", (e) => {
       const q = e.target.value.toLowerCase().trim();
       const filtrati = tuttiClienti.filter(c => 
