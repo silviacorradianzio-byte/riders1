@@ -11,11 +11,13 @@
     input, button { width: 100%; padding: 12px; margin: 6px 0; border-radius: 8px; border: none; box-sizing: border-box; font-size: 1rem; }
     input { background: #2a2a2a; color: #fff; border: 1px solid #444; }
     button { background: #ff9800; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; }
-    .cliente-item { background: #2a2a2a; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #ff9800; }
+    .cliente-item { background: #2a2a2a; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #ff9800; position: relative; }
+    .badge-zona { background: #ff9800; color: #000; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; display: inline-block; margin-bottom: 5px; }
     .actions { display: flex; gap: 8px; margin-top: 10px; }
-    .actions a { flex: 1; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.9rem; }
+    .actions a, .actions button { flex: 1; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.9rem; border: none; cursor: pointer; }
     .btn-call { background: #4caf50; color: white; }
     .btn-map { background: #2196f3; color: white; }
+    .btn-delete { background: #f44336; color: white; flex: 0.5 !important; }
   </style>
 </head>
 <body>
@@ -23,26 +25,26 @@
   <h1>🍕 Strapizzami Delivery</h1>
 
   <div class="card">
-    <h3>Aggiungi / Cerca Cliente</h3>
+    <h3>Aggiungi Nuovo Cliente</h3>
     <input type="text" id="nome" placeholder="Nome e Cognome (es. Mario Rossi)">
     <input type="text" id="indirizzo" placeholder="Indirizzo (es. Via Eschieto 1)">
+    <input type="text" id="zona" placeholder="Zona / Quartiere (es. Cretarossa, Poligono, Centro)">
     <input type="tel" id="telefono" placeholder="Telefono (es. 3803620178)">
-    <input type="text" id="note" placeholder="Note (es. citofono, piano)">
+    <input type="text" id="note" placeholder="Note (es. citofono, piano, scala)">
     <button id="btnSalva">Salva Cliente</button>
   </div>
 
   <div class="card">
     <h3>Clienti Salvati</h3>
-    <input type="text" id="ricerca" placeholder="🔍 Cerca per nome o via...">
+    <input type="text" id="ricerca" placeholder="🔍 Cerca per nome, via, zona o numero...">
     <div id="listaClienti" style="margin-top: 10px;">Caricamento in corso...</div>
   </div>
 
   <!-- Firebase SDK per Realtime Database -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Inserisci solo l'apiKey presa da Firebase (Impostazioni Progetto)
     const firebaseConfig = {
       apiKey: "INSERISCI_LA_TUA_API_KEY", 
       databaseURL: "https://rider-strapizzami-default-rtdb.firebaseio.com"
@@ -58,6 +60,7 @@
     document.getElementById("btnSalva").addEventListener("click", () => {
       const nome = document.getElementById("nome").value;
       const indirizzo = document.getElementById("indirizzo").value;
+      const zona = document.getElementById("zona").value;
       const telefono = document.getElementById("telefono").value;
       const note = document.getElementById("note").value;
 
@@ -67,12 +70,13 @@
       }
 
       push(clientiRef, {
-        nome, indirizzo, telefono, note,
+        nome, indirizzo, zona, telefono, note,
         data: new Date().toISOString()
       });
 
       document.getElementById("nome").value = "";
       document.getElementById("indirizzo").value = "";
+      document.getElementById("zona").value = "";
       document.getElementById("telefono").value = "";
       document.getElementById("note").value = "";
     });
@@ -83,7 +87,7 @@
       const data = snapshot.val();
       if (data) {
         Object.keys(data).forEach(key => {
-          tuttiClienti.push(data[key]);
+          tuttiClienti.push({ id: key, ...data[key] });
         });
       }
       mostraClienti(tuttiClienti);
@@ -92,31 +96,45 @@
     function mostraClienti(lista) {
       const cont = document.getElementById("listaClienti");
       if (lista.length === 0) {
-        cont.innerHTML = "<p style='color:#888;'>Nessun cliente salvato.</p>";
+        cont.innerHTML = "<p style='color:#888;'>Nessun cliente trovato.</p>";
         return;
       }
       cont.innerHTML = "";
-      lista.reverse().forEach(c => {
+      lista.slice().reverse().forEach(c => {
         cont.innerHTML += `
           <div class="cliente-item">
+            ${c.zona ? `<span class="badge-zona">📍 ${c.zona}</span><br>` : ''}
             <strong>${c.nome}</strong><br>
-            📍 ${c.indirizzo}<br>
+            🏠 ${c.indirizzo}<br>
             📞 ${c.telefono}<br>
             ${c.note ? `<small style="color:#aaa;">📝 ${c.note}</small><br>` : ''}
             <div class="actions">
               <a href="tel:${c.telefono}" class="btn-call">Chiama</a>
               <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.indirizzo + ' Nettuno')}" target="_blank" class="btn-map">Mappa</a>
+              <button onclick="eliminaCliente('${c.id}')" class="btn-delete">🗑️</button>
             </div>
           </div>
         `;
       });
     }
 
-    // Ricerca rapida
+    // Funzione per eliminare un cliente dal database
+    window.eliminaCliente = function(id) {
+      if (confirm("Vuoi davvero eliminare questo cliente?")) {
+        const clienteSpecificoRef = ref(db, 'clienti/' + id);
+        remove(clienteSpecificoRef);
+      }
+    };
+
+    // Ricerca globale avanzata: Cerca in Nome, Indirizzo, Zona, Telefono e Note
     document.getElementById("ricerca").addEventListener("input", (e) => {
-      const q = e.target.value.toLowerCase();
+      const q = e.target.value.toLowerCase().trim();
       const filtrati = tuttiClienti.filter(c => 
-        c.nome.toLowerCase().includes(q) || c.indirizzo.toLowerCase().includes(q)
+        (c.nome && c.nome.toLowerCase().includes(q)) ||
+        (c.indirizzo && c.indirizzo.toLowerCase().includes(q)) ||
+        (c.zona && c.zona.toLowerCase().includes(q)) ||
+        (c.telefono && c.telefono.includes(q)) ||
+        (c.note && c.note.toLowerCase().includes(q))
       );
       mostraClienti(filtrati);
     });
