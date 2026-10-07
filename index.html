@@ -14,12 +14,12 @@
     input:focus { border-color: #666; outline: none; }
     button { background: #fff; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; border-radius: 8px; }
     
-    /* Picker Colore Zona */
+    /* Picker a 15 Colori per le Zone */
     .color-picker-container { margin: 10px 0; }
-    .color-picker-label { font-size: 0.85rem; color: #888; margin-bottom: 6px; display: block; }
-    .color-options { display: flex; gap: 10px; }
+    .color-picker-label { font-size: 0.85rem; color: #888; margin-bottom: 8px; display: block; }
+    .color-options { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; justify-items: center; }
     .color-btn { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; margin: 0; }
-    .color-btn.selected { border-color: #fff; transform: scale(1.15); }
+    .color-btn.selected { border-color: #fff; transform: scale(1.18); box-shadow: 0 0 8px rgba(255,255,255,0.5); }
 
     /* Schede Clienti */
     .cliente-item { background: #111; padding: 14px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #222; position: relative; }
@@ -46,14 +46,26 @@
     <input type="text" id="zona" placeholder="Zona / Quartiere (es. Cretarossa, Poligono)">
     
     <div class="color-picker-container">
-      <span class="color-picker-label">Colore Badge Zona:</span>
+      <span class="color-picker-label">Colore Badge Zona (Scegli tra i 15 colori):</span>
       <div class="color-options">
+        <!-- RIGA 1 -->
         <button type="button" class="color-btn selected" style="background:#ff9800" data-color="#ff9800"></button>
         <button type="button" class="color-btn" style="background:#f44336" data-color="#f44336"></button>
-        <button type="button" class="color-btn" style="background:#9c27b0" data-color="#9c27b0"></button>
-        <button type="button" class="color-btn" style="background:#00bcd4" data-color="#00bcd4"></button>
-        <button type="button" class="color-btn" style="background:#4caf50" data-color="#4caf50"></button>
         <button type="button" class="color-btn" style="background:#e91e63" data-color="#e91e63"></button>
+        <button type="button" class="color-btn" style="background:#9c27b0" data-color="#9c27b0"></button>
+        <button type="button" class="color-btn" style="background:#673ab7" data-color="#673ab7"></button>
+        <!-- RIGA 2 -->
+        <button type="button" class="color-btn" style="background:#3f51b5" data-color="#3f51b5"></button>
+        <button type="button" class="color-btn" style="background:#2196f3" data-color="#2196f3"></button>
+        <button type="button" class="color-btn" style="background:#03a9f4" data-color="#03a9f4"></button>
+        <button type="button" class="color-btn" style="background:#00bcd4" data-color="#00bcd4"></button>
+        <button type="button" class="color-btn" style="background:#009688" data-color="#009688"></button>
+        <!-- RIGA 3 -->
+        <button type="button" class="color-btn" style="background:#4caf50" data-color="#4caf50"></button>
+        <button type="button" class="color-btn" style="background:#8bc34a" data-color="#8bc34a"></button>
+        <button type="button" class="color-btn" style="background:#cddc39" data-color="#cddc39"></button>
+        <button type="button" class="color-btn" style="background:#ffeb3b; color:#000;" data-color="#ffeb3b"></button>
+        <button type="button" class="color-btn" style="background:#795548" data-color="#795548"></button>
       </div>
     </div>
 
@@ -118,10 +130,8 @@
       };
 
       if (editId) {
-        // Modifica scheda esistente
         set(ref(db, 'clienti/' + editId), payload);
       } else {
-        // Nuova scheda
         push(clientiRef, payload);
       }
 
@@ -164,9 +174,12 @@
       cont.innerHTML = "";
       lista.slice().reverse().forEach(c => {
         const bgZona = c.coloreZona || "#333";
+        // Testo nero per sfondi molto chiari (es. Giallo)
+        const textColor = bgZona === "#ffeb3b" ? "#000" : "#fff";
+
         cont.innerHTML += `
           <div class="cliente-item">
-            ${c.zona ? `<span class="badge-zona" style="background:${bgZona}">📍 ${c.zona}</span><br>` : ''}
+            ${c.zona ? `<span class="badge-zona" style="background:${bgZona}; color:${textColor};">📍 ${c.zona}</span><br>` : ''}
             <strong style="font-size:1.05rem;">${c.nome}</strong><br>
             <span style="color:#ccc;">🏠 ${c.indirizzo}</span><br>
             <span style="color:#ccc;">📞 ${c.telefono}</span><br>
@@ -194,7 +207,6 @@
       document.getElementById("telefono").value = c.telefono || "";
       document.getElementById("note").value = c.note || "";
 
-      // Seleziona il colore salvato
       coloreSelezionato = c.coloreZona || "#ff9800";
       document.querySelectorAll('.color-btn').forEach(b => {
         if (b.getAttribute('data-color') === coloreSelezionato) b.classList.add('selected');
