@@ -10,7 +10,7 @@
 
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; background: #000; color: #fff; margin: 0; padding: 15px; }
-    h1 { font-size: 1.3rem; color: #fff; text-align: center; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    h1 { font-size: 1.3rem; color: #f78bee; text-align: center; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px; }
     
     #map { height: 350px !important; width: 100%; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; background: #222; }
 
@@ -18,11 +18,11 @@
     .card h3 { margin-top: 0; color: #eee; font-size: 1.1rem; }
     input, button { width: 100%; padding: 12px; margin: 6px 0; border-radius: 8px; border: none; box-sizing: border-box; font-size: 1rem; }
     input { background: #222; color: #fff; border: 1px solid #333; }
-    input:focus { border-color: #666; outline: none; }
+    input:focus { border-color: #f78bee; outline: none; }
     button { background: #fff; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; border-radius: 8px; }
     
     /* Box Ottimizzatore Giro */
-    .btn-optimize { background: #ff9800 !important; color: #000 !important; font-size: 1.05rem; padding: 14px; margin-bottom: 10px; }
+    .btn-optimize { background: #f78bee !important; color: #000 !important; font-size: 1.05rem; padding: 14px; margin-bottom: 10px; }
     #percorsoRisultato { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-top: 10px; display: none; }
     .tappa-item { padding: 6px 0; border-bottom: 1px solid #2a2a2a; font-size: 0.95rem; }
     .tappa-item:last-child { border-bottom: none; }
@@ -36,9 +36,10 @@
 
     /* Schede Clienti con Checkbox */
     .cliente-item { background: #111; padding: 14px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #222; position: relative; }
-    .checkbox-select { width: 22px; height: 22px; float: right; cursor: pointer; accent-color: #ff9800; }
+    .checkbox-select { width: 22px; height: 22px; float: right; cursor: pointer; accent-color: #f78bee; }
     .badge-zona { color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; display: inline-block; margin-bottom: 8px; }
-    
+    .badge-orario { background: #f78bee; color: #000; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; display: inline-block; margin-bottom: 8px; margin-left: 5px; }
+
     /* Azioni */
     .actions { display: flex; gap: 8px; margin-top: 12px; }
     .actions a, .actions button { flex: 1; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.85rem; border: none; cursor: pointer; }
@@ -58,11 +59,11 @@
   <!-- PANNELLO OTTIMIZZAZIONE GIRO -->
   <div class="card">
     <h3>🚀 Ottimizzatore Giro Consegne</h3>
-    <p style="font-size:0.85rem; color:#aaa; margin-top:-5px;">Seleziona i clienti con la spunta in basso e calcola la sequenza ideale per metterci meno tempo.</p>
+    <p style="font-size:0.85rem; color:#aaa; margin-top:-5px;">Seleziona i clienti con la spunta in basso e calcola il percorso in base all'orario e alla strada migliore.</p>
     <button id="btnCalcolaGiro" class="btn-optimize">⚡ Calcola Sequenza Ideale</button>
     
     <div id="percorsoRisultato">
-      <strong style="color:#ff9800;">📍 Ordine Consegne Consigliato:</strong>
+      <strong style="color:#f78bee;">📍 Ordine Consegne Consigliato:</strong>
       <div id="listaTappe" style="margin-top:8px;"></div>
     </div>
   </div>
@@ -73,11 +74,12 @@
     <input type="text" id="nome" placeholder="Nome e Cognome (es. Mario Rossi)">
     <input type="text" id="indirizzo" placeholder="Indirizzo (es. Via Eschieto 1)">
     <input type="text" id="zona" placeholder="Zona / Quartiere (es. Cretarossa, Poligono)">
+    <input type="time" id="orario" placeholder="Orario Consegna (es. 20:00)">
     
     <div class="color-picker-container">
       <span class="color-picker-label">Colore Badge e Marker Mappa:</span>
       <div class="color-options">
-        <button type="button" class="color-btn selected" style="background:#ff9800" data-color="#ff9800"></button>
+        <button type="button" class="color-btn selected" style="background:#f78bee" data-color="#f78bee"></button>
         <button type="button" class="color-btn" style="background:#f44336" data-color="#f44336"></button>
         <button type="button" class="color-btn" style="background:#e91e63" data-color="#e91e63"></button>
         <button type="button" class="color-btn" style="background:#9c27b0" data-color="#9c27b0"></button>
@@ -104,7 +106,7 @@
 
   <div class="card">
     <h3>Clienti Salvati</h3>
-    <input type="text" id="ricerca" placeholder="🔍 Cerca per nome, via, zona o numero...">
+    <input type="text" id="ricerca" placeholder="🔍 Cerca per nome, via, zona, orario o numero...">
     <div id="listaClienti" style="margin-top: 10px;">Caricamento in corso...</div>
   </div>
 
@@ -126,11 +128,10 @@
     const db = getDatabase(app);
     const clientiRef = ref(db, 'clienti');
 
-    // Coordinate Pizzeria Strapizzami (Nettuno) come punto di partenza
-    const STRAPIZZAMI_POS = { lat: 41.4582, lon: 12.6631, nome: "Strapizzami (Partenza)" };
+    const STRAPIZZAMI_POS = { lat: 41.4648, lon: 12.6688, nome: "Strapizzami (Via Cervino)" };
 
     let tuttiClienti = [];
-    let coloreSelezionato = "#ff9800";
+    let coloreSelezionato = "#f78bee";
     let map, markersGroup, polylineRoute;
 
     function initMap() {
@@ -176,6 +177,7 @@
       const nome = document.getElementById("nome").value.trim();
       const indirizzo = document.getElementById("indirizzo").value.trim();
       const zona = document.getElementById("zona").value.trim();
+      const orario = document.getElementById("orario").value;
       const telefono = document.getElementById("telefono").value.trim();
       const note = document.getElementById("note").value.trim();
 
@@ -187,7 +189,7 @@
       const coords = await geocodeAddress(indirizzo);
 
       const payload = {
-        nome, indirizzo, zona, 
+        nome, indirizzo, zona, orario,
         coloreZona: coloreSelezionato,
         telefono, note,
         lat: coords ? coords.lat : null,
@@ -211,6 +213,7 @@
       document.getElementById("nome").value = "";
       document.getElementById("indirizzo").value = "";
       document.getElementById("zona").value = "";
+      document.getElementById("orario").value = "";
       document.getElementById("telefono").value = "";
       document.getElementById("note").value = "";
       document.getElementById("formTitle").innerText = "Aggiungi / Modifica Cliente";
@@ -235,7 +238,7 @@
 
       lista.forEach(c => {
         if (c.lat && c.lon) {
-          const color = c.coloreZona || "#ff9800";
+          const color = c.coloreZona || "#f78bee";
           const customMarker = L.divIcon({
             className: 'custom-pin',
             html: `<div style="background-color:${color}; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 5px #000;"></div>`,
@@ -246,7 +249,7 @@
           const marker = L.marker([c.lat, c.lon], { icon: customMarker });
           marker.bindPopup(`
             <div style="color:#000;">
-              <strong>${c.nome}</strong><br>
+              <strong>${c.nome}</strong> ${c.orario ? `<b style="color:#f78bee;">(${c.orario})</b>` : ''}<br>
               📍 ${c.indirizzo}<br>
               📞 <a href="tel:${c.telefono}">${c.telefono}</a><br>
               ${c.note ? `<small>📝 ${c.note}</small>` : ''}
@@ -271,7 +274,8 @@
         cont.innerHTML += `
           <div class="cliente-item">
             <input type="checkbox" class="checkbox-select" data-id="${c.id}">
-            ${c.zona ? `<span class="badge-zona" style="background:${bgZona}; color:${textColor};">📍 ${c.zona}</span><br>` : ''}
+            ${c.zona ? `<span class="badge-zona" style="background:${bgZona}; color:${textColor};">📍 ${c.zona}</span>` : ''}
+            ${c.orario ? `<span class="badge-orario">🕒 ${c.orario}</span>` : ''}<br>
             <strong style="font-size:1.05rem;">${c.nome}</strong><br>
             <span style="color:#ccc;">🏠 ${c.indirizzo}</span><br>
             <span style="color:#ccc;">📞 ${c.telefono}</span><br>
@@ -287,9 +291,8 @@
       });
     }
 
-    // ALGORITMO OTTIMIZZATORE DI PERCORSO (Nearest Neighbor)
     function calcolaDistanza(p1, p2) {
-      const R = 6371; // Raggio della Terra in km
+      const R = 6371;
       const dLat = (p2.lat - p1.lat) * Math.PI / 180;
       const dLon = (p2.lon - p1.lon) * Math.PI / 180;
       const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -298,6 +301,7 @@
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
+    // OTTIMIZZATORE CON PRIORITÀ AD ORARIO E STRADA
     document.getElementById("btnCalcolaGiro").addEventListener("click", () => {
       const selezionati = Array.from(document.querySelectorAll('.checkbox-select:checked'))
                                .map(cb => tuttiClienti.find(c => c.id === cb.getAttribute('data-id')))
@@ -308,45 +312,75 @@
         return;
       }
 
-      let daVisitare = [...selezionati];
+      // 1. Raggruppa i clienti per fascia oraria
+      let gruppiOrario = {};
+      selezionati.forEach(c => {
+        let key = c.orario || "23:59";
+        if (!gruppiOrario[key]) gruppiOrario[key] = [];
+        gruppiOrario[key].push(c);
+      });
+
+      // Ordinamento fasce orarie (es. 20:00 prima di 20:20)
+      let orariOrdinati = Object.keys(gruppiOrario).sort();
+
       let puntoAttuale = STRAPIZZAMI_POS;
       let percorsoOrdinato = [];
       let latLngsPolyline = [[STRAPIZZAMI_POS.lat, STRAPIZZAMI_POS.lon]];
 
-      while (daVisitare.length > 0) {
-        let piuVicinoIdx = 0;
-        let distMinima = Infinity;
+      // 2. Per ogni fascia oraria, trova il percorso più breve tra i punti di quella fascia
+      orariOrdinati.forEach(orarioKey => {
+        let daVisitare = [...gruppiOrario[orarioKey]];
 
-        for (let i = 0; i < daVisitare.length; i++) {
-          let dist = calcolaDistanza(puntoAttuale, daVisitare[i]);
-          if (dist < distMinima) {
-            distMinima = dist;
-            piuVicinoIdx = i;
+        while (daVisitare.length > 0) {
+          let piuVicinoIdx = 0;
+          let distMinima = Infinity;
+
+          for (let i = 0; i < daVisitare.length; i++) {
+            let dist = calcolaDistanza(puntoAttuale, daVisitare[i]);
+            if (dist < distMinima) {
+              distMinima = dist;
+              piuVicinoIdx = i;
+            }
           }
-        }
 
-        let prossimo = daVisitare.splice(piuVicinoIdx, 1)[0];
-        percorsoOrdinato.push(prossimo);
-        latLngsPolyline.push([prossimo.lat, prossimo.lon]);
-        puntoAttuale = prossimo;
-      }
+          let prossimo = daVisitare.splice(piuVicinoIdx, 1)[0];
+          percorsoOrdinato.push(prossimo);
+          latLngsPolyline.push([prossimo.lat, prossimo.lon]);
+          puntoAttuale = prossimo;
+        }
+      });
+
+      // Ritorno in Pizzeria
+      latLngsPolyline.push([STRAPIZZAMI_POS.lat, STRAPIZZAMI_POS.lon]);
 
       // Mostra Risultato Testuale
       const contRisultati = document.getElementById("listaTappe");
-      contRisultati.innerHTML = "";
+      contRisultati.innerHTML = `
+        <div class="tappa-item" style="color:#aaa;">
+          <b>🏁 START:</b> Strapizzami (Via Cervino)
+        </div>
+      `;
+      
       percorsoOrdinato.forEach((c, idx) => {
         contRisultati.innerHTML += `
           <div class="tappa-item">
-            <b style="color:#ff9800;">${idx + 1}° TAPPA:</b> <b>${c.nome}</b><br>
+            <b style="color:#f78bee;">${idx + 1}° TAPPA:</b> <b>${c.nome}</b> ${c.orario ? `<span style="color:#f78bee;">[🕒 ${c.orario}]</span>` : ''}<br>
             🏠 ${c.indirizzo} ${c.zona ? `(${c.zona})` : ''} | 📞 <a href="tel:${c.telefono}" style="color:#4caf50;">${c.telefono}</a>
           </div>
         `;
       });
+
+      contRisultati.innerHTML += `
+        <div class="tappa-item" style="color:#f78bee; font-weight:bold;">
+          🏁 RITORNO: Rientro in Pizzeria
+        </div>
+      `;
+
       document.getElementById("percorsoRisultato").style.display = "block";
 
-      // Disegna Linea Arancione del Percorso sulla Mappa
+      // Disegna il percorso rosa sulla mappa
       if (polylineRoute) map.removeLayer(polylineRoute);
-      polylineRoute = L.polyline(latLngsPolyline, { color: '#ff9800', weight: 4, dashArray: '6, 8' }).addTo(map);
+      polylineRoute = L.polyline(latLngsPolyline, { color: '#f78bee', weight: 4, dashArray: '6, 8' }).addTo(map);
       map.fitBounds(polylineRoute.getBounds(), { padding: [30, 30] });
     });
 
@@ -358,10 +392,11 @@
       document.getElementById("nome").value = c.nome || "";
       document.getElementById("indirizzo").value = c.indirizzo || "";
       document.getElementById("zona").value = c.zona || "";
+      document.getElementById("orario").value = c.orario || "";
       document.getElementById("telefono").value = c.telefono || "";
       document.getElementById("note").value = c.note || "";
 
-      coloreSelezionato = c.coloreZona || "#ff9800";
+      coloreSelezionato = c.coloreZona || "#f78bee";
       document.querySelectorAll('.color-btn').forEach(b => {
         if (b.getAttribute('data-color') === coloreSelezionato) b.classList.add('selected');
         else b.classList.remove('selected');
@@ -387,6 +422,7 @@
         (c.nome && c.nome.toLowerCase().includes(q)) ||
         (c.indirizzo && c.indirizzo.toLowerCase().includes(q)) ||
         (c.zona && c.zona.toLowerCase().includes(q)) ||
+        (c.orario && c.orario.includes(q)) ||
         (c.telefono && c.telefono.includes(q)) ||
         (c.note && c.note.toLowerCase().includes(q))
       );
