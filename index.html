@@ -3,10 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Strapizzami Rider</title>
+  <title>Strapizzami Live Map</title>
+
+  <!-- Leaflet CSS per la Mappa -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; background: #000; color: #fff; margin: 0; padding: 15px; }
-    h1 { font-size: 1.3rem; color: #fff; text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    h1 { font-size: 1.3rem; color: #fff; text-align: center; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    
+    /* Contenitore Mappa */
+    #map { height: 350px; width: 100%; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; }
+
     .card { background: #111; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #222; }
     .card h3 { margin-top: 0; color: #eee; font-size: 1.1rem; }
     input, button { width: 100%; padding: 12px; margin: 6px 0; border-radius: 8px; border: none; box-sizing: border-box; font-size: 1rem; }
@@ -14,7 +22,7 @@
     input:focus { border-color: #666; outline: none; }
     button { background: #fff; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; border-radius: 8px; }
     
-    /* Picker a 15 Colori per le Zone */
+    /* Picker a 15 Colori */
     .color-picker-container { margin: 10px 0; }
     .color-picker-label { font-size: 0.85rem; color: #888; margin-bottom: 8px; display: block; }
     .color-options { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; justify-items: center; }
@@ -25,18 +33,21 @@
     .cliente-item { background: #111; padding: 14px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #222; position: relative; }
     .badge-zona { color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; display: inline-block; margin-bottom: 8px; }
     
-    /* Azioni e Pulsanti */
+    /* Azioni */
     .actions { display: flex; gap: 8px; margin-top: 12px; }
     .actions a, .actions button { flex: 1; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.85rem; border: none; cursor: pointer; }
-    .btn-call { background: #2e7d32 !important; color: #fff !important; } /* Verde */
-    .btn-map { background: #1565c0 !important; color: #fff !important; }  /* Blu */
+    .btn-call { background: #2e7d32 !important; color: #fff !important; } 
+    .btn-map { background: #1565c0 !important; color: #fff !important; }  
     .btn-edit { background: #333 !important; color: #fff !important; flex: 0.6 !important; }
     .btn-delete { background: #222 !important; color: #ff5252 !important; flex: 0.4 !important; border: 1px solid #333 !important; }
   </style>
 </head>
 <body>
 
-  <h1>🍕 Strapizzami Delivery</h1>
+  <h1>🍕 Strapizzami Live Map</h1>
+
+  <!-- MAPPA INTERATTIVA -->
+  <div id="map"></div>
 
   <div class="card">
     <h3 id="formTitle">Aggiungi / Modifica Cliente</h3>
@@ -46,33 +57,30 @@
     <input type="text" id="zona" placeholder="Zona / Quartiere (es. Cretarossa, Poligono)">
     
     <div class="color-picker-container">
-      <span class="color-picker-label">Colore Badge Zona (Scegli tra i 15 colori):</span>
+      <span class="color-picker-label">Colore Badge e Marker Mappa:</span>
       <div class="color-options">
-        <!-- RIGA 1 -->
         <button type="button" class="color-btn selected" style="background:#ff9800" data-color="#ff9800"></button>
         <button type="button" class="color-btn" style="background:#f44336" data-color="#f44336"></button>
         <button type="button" class="color-btn" style="background:#e91e63" data-color="#e91e63"></button>
         <button type="button" class="color-btn" style="background:#9c27b0" data-color="#9c27b0"></button>
         <button type="button" class="color-btn" style="background:#673ab7" data-color="#673ab7"></button>
-        <!-- RIGA 2 -->
         <button type="button" class="color-btn" style="background:#3f51b5" data-color="#3f51b5"></button>
         <button type="button" class="color-btn" style="background:#2196f3" data-color="#2196f3"></button>
         <button type="button" class="color-btn" style="background:#03a9f4" data-color="#03a9f4"></button>
         <button type="button" class="color-btn" style="background:#00bcd4" data-color="#00bcd4"></button>
         <button type="button" class="color-btn" style="background:#009688" data-color="#009688"></button>
-        <!-- RIGA 3 -->
         <button type="button" class="color-btn" style="background:#4caf50" data-color="#4caf50"></button>
         <button type="button" class="color-btn" style="background:#8bc34a" data-color="#8bc34a"></button>
         <button type="button" class="color-btn" style="background:#cddc39" data-color="#cddc39"></button>
-        <button type="button" class="color-btn" style="background:#ffeb3b; color:#000;" data-color="#ffeb3b"></button>
+        <button type="button" class="color-btn" style="background:#ffeb3b" data-color="#ffeb3b"></button>
         <button type="button" class="color-btn" style="background:#795548" data-color="#795548"></button>
       </div>
     </div>
 
-    <input type="tel" id="telefono" placeholder="Telefono (es. 3803620178, 06980000)">
-    <input type="text" id="note" placeholder="Note (es. citofono, scala B, secondo numero)">
+    <input type="tel" id="telefono" placeholder="Telefono (es. 3803620178)">
+    <input type="text" id="note" placeholder="Note (es. citofono, scala B)">
     
-    <button id="btnSalva">Salva Cliente</button>
+    <button id="btnSalva">Salva Cliente e Posiziona</button>
     <button id="btnAnnulla" style="display:none; background:#222; color:#fff; border:1px solid #333;">Annulla Modifica</button>
   </div>
 
@@ -82,7 +90,10 @@
     <div id="listaClienti" style="margin-top: 10px;">Caricamento in corso...</div>
   </div>
 
-  <!-- Firebase SDK per Realtime Database -->
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -98,8 +109,24 @@
 
     let tuttiClienti = [];
     let coloreSelezionato = "#ff9800";
+    let map, markersGroup;
 
-    // Gestione selezione colore zona
+    // Inizializza Mappa centrata su Nettuno
+    function initMap() {
+      map = L.map('map').setView([41.4582, 12.6631], 14); // Coordinate Nettuno
+      
+      // Mappa Scura / Dark Mode Style
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 19
+      }).addTo(map);
+
+      markersGroup = L.layerGroup().addTo(map);
+    }
+
+    initMap();
+
+    // Gestione Selezione Colore
     document.querySelectorAll('.color-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
@@ -108,8 +135,23 @@
       });
     });
 
-    // Salva o Aggiorna Cliente
-    document.getElementById("btnSalva").addEventListener("click", () => {
+    // Converti indirizzo in Coordinate GPS via Nominatim (Free Geocoding)
+    async function geocodeAddress(address) {
+      try {
+        const query = encodeURIComponent(address + ", Nettuno, Italy");
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
+        const data = await res.json();
+        if (data && data.length > 0) {
+          return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+        }
+      } catch (e) {
+        console.error("Geocoding error", e);
+      }
+      return null;
+    }
+
+    // Salva o Modifica Cliente
+    document.getElementById("btnSalva").addEventListener("click", async () => {
       const editId = document.getElementById("editId").value;
       const nome = document.getElementById("nome").value.trim();
       const indirizzo = document.getElementById("indirizzo").value.trim();
@@ -122,10 +164,15 @@
         return;
       }
 
+      // Trova coordinate sulla mappa
+      const coords = await geocodeAddress(indirizzo);
+
       const payload = {
         nome, indirizzo, zona, 
         coloreZona: coloreSelezionato,
         telefono, note,
+        lat: coords ? coords.lat : null,
+        lon: coords ? coords.lon : null,
         data: new Date().toISOString()
       };
 
@@ -138,7 +185,6 @@
       resetForm();
     });
 
-    // Annulla Modifica
     document.getElementById("btnAnnulla").addEventListener("click", resetForm);
 
     function resetForm() {
@@ -149,11 +195,11 @@
       document.getElementById("telefono").value = "";
       document.getElementById("note").value = "";
       document.getElementById("formTitle").innerText = "Aggiungi / Modifica Cliente";
-      document.getElementById("btnSalva").innerText = "Salva Cliente";
+      document.getElementById("btnSalva").innerText = "Salva Cliente e Posiziona";
       document.getElementById("btnAnnulla").style.display = "none";
     }
 
-    // Ascolta gli aggiornamenti in tempo reale
+    // Sincronizzazione in tempo reale con Firebase
     onValue(clientiRef, (snapshot) => {
       tuttiClienti = [];
       const data = snapshot.val();
@@ -163,7 +209,37 @@
         });
       }
       mostraClienti(tuttiClienti);
+      aggiornaMappa(tuttiClienti);
     });
+
+    function aggiornaMappa(lista) {
+      markersGroup.clearLayers();
+
+      lista.forEach(c => {
+        if (c.lat && c.lon) {
+          const color = c.coloreZona || "#ff9800";
+          
+          // Icona Cerchio Colorato Personalizzata per la Mappa
+          const customMarker = L.divIcon({
+            className: 'custom-pin',
+            html: `<div style="background-color:${color}; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 5px #000;"></div>`,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+          });
+
+          const marker = L.marker([c.lat, c.lon], { icon: customMarker });
+          marker.bindPopup(`
+            <div style="color:#000;">
+              <strong>${c.nome}</strong><br>
+              📍 ${c.indirizzo}<br>
+              📞 <a href="tel:${c.telefono}">${c.telefono}</a><br>
+              ${c.note ? `<small>📝 ${c.note}</small>` : ''}
+            </div>
+          `);
+          markersGroup.addLayer(marker);
+        }
+      });
+    }
 
     function mostraClienti(lista) {
       const cont = document.getElementById("listaClienti");
@@ -174,7 +250,6 @@
       cont.innerHTML = "";
       lista.slice().reverse().forEach(c => {
         const bgZona = c.coloreZona || "#333";
-        // Testo nero per sfondi molto chiari (es. Giallo)
         const textColor = bgZona === "#ffeb3b" ? "#000" : "#fff";
 
         cont.innerHTML += `
@@ -195,7 +270,6 @@
       });
     }
 
-    // Carica dati nel form per la modifica
     window.preparaModifica = function(id) {
       const c = tuttiClienti.find(item => item.id === id);
       if (!c) return;
@@ -214,20 +288,19 @@
       });
 
       document.getElementById("formTitle").innerText = "✏️ Modifica Cliente";
-      document.getElementById("btnSalva").innerText = "Aggiorna Cliente";
+      document.getElementById("btnSalva").innerText = "Aggiorna e Riposiziona";
       document.getElementById("btnAnnulla").style.display = "block";
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Eliminazione cliente
     window.eliminaCliente = function(id) {
       if (confirm("Vuoi davvero eliminare questo cliente?")) {
         remove(ref(db, 'clienti/' + id));
       }
     };
 
-    // Ricerca globale istantanea
+    // Ricerca globale
     document.getElementById("ricerca").addEventListener("input", (e) => {
       const q = e.target.value.toLowerCase().trim();
       const filtrati = tuttiClienti.filter(c => 
@@ -238,6 +311,7 @@
         (c.note && c.note.toLowerCase().includes(q))
       );
       mostraClienti(filtrati);
+      aggiornaMappa(filtrati);
     });
   </script>
 </body>
